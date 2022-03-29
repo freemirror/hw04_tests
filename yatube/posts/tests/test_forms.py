@@ -1,11 +1,8 @@
-from django.contrib.auth import get_user_model
 from django.test import Client, TestCase
 from django.urls import reverse
 
 from ..forms import PostForm
-from ..models import Post
-
-User = get_user_model()
+from ..models import Post, User
 
 
 class PostCreateFormTests(TestCase):
@@ -25,7 +22,6 @@ class PostCreateFormTests(TestCase):
 
     def setUp(self):
         self.guest_client = Client()
-        self.user = User.objects.get(username='freemirror')
         self.authorized_client = Client()
         self.authorized_client.force_login(self.user)
 
@@ -40,15 +36,12 @@ class PostCreateFormTests(TestCase):
         )
         self.assertRedirects(
             response, reverse(
-                'posts:profile', kwargs={'username': 'freemirror'}
+                'posts:profile', kwargs={'username': self.user}
             )
         )
         self.assertEqual(Post.objects.count(), posts_count + 1)
         self.assertTrue(
-            Post.objects.filter(
-                text='Текстовый пост 2',
-                pk='2',
-            ).exists()
+            Post.objects.filter(text='Текстовый пост 2').exists()
         )
 
     def test_edit_post(self):
@@ -62,8 +55,23 @@ class PostCreateFormTests(TestCase):
         )
         self.assertEqual(Post.objects.count(), posts_count)
         self.assertTrue(
-            Post.objects.filter(
-                text='Текстовый пост 3',
-                pk='1',
-            ).exists()
+            Post.objects.filter(text='Текстовый пост 3').exists()
+        )
+
+    def test_create_post_anonymous(self):
+        """"Создание поста под гостевым пользователем."""
+        posts_count = Post.objects.count()
+        form_data = {'text': 'Текстовый пост от гостя'}
+        response = self.guest_client.post(
+            reverse('posts:post_create'),
+            data=form_data,
+            follow=True,
+        )
+        self.assertRedirects(
+            response,
+            reverse('users:login') + '?next=/create/'
+        )
+        self.assertEqual(Post.objects.count(), posts_count)
+        self.assertFalse(
+            Post.objects.filter(text='Текстовый пост от гостя').exists()
         )

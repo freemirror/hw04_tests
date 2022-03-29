@@ -1,13 +1,11 @@
 from django import forms
-from django.contrib.auth import get_user_model
 from django.test import Client, TestCase
 from django.urls import reverse
 
-from ..models import Group, Post
+from ..models import Group, Post, User
 
-User = get_user_model()
 
-URLS_TEMPLATES = {
+urls_templates = {
     reverse('posts:index'): 'posts/index.html',
     reverse(
         'posts:group_list', kwargs={'slug': 'group_slug'}
@@ -35,7 +33,7 @@ class PostPagesTests(TestCase):
             slug='group_slug',
             description='Тестовое описание',
         )
-        cls.group2 = Group.objects.create(
+        cls.group_without_posts = Group.objects.create(
             title='Ветра',
             slug='group2_slug',
             description='Тестовое описание группы',
@@ -45,14 +43,29 @@ class PostPagesTests(TestCase):
             author=cls.user,
             group=cls.group,
         )
+        cls.urls_templates = {
+            reverse('posts:index'): 'posts/index.html',
+            reverse(
+                'posts:group_list', kwargs={'slug': cls.group.slug}
+            ): 'posts/group_list.html',
+            reverse(
+                'posts:profile', kwargs={'username': cls.user.username}
+            ): 'posts/profile.html',
+            reverse(
+                'posts:post_detail', kwargs={'post_id': str(cls.post.pk)}
+            ): 'posts/post_detail.html',
+            reverse('posts:post_create'): 'posts/create_post.html',
+            reverse(
+                'posts:post_edit', kwargs={'post_id': str(cls.post.pk)}
+            ): 'posts/create_post.html',
+        }
 
     def setUp(self):
-        self.user = User.objects.get(username='freemirror')
         self.authorized_client = Client()
         self.authorized_client.force_login(self.user)
 
     def test_pages_uses_correct_template(self):
-        for reverse_name, template in URLS_TEMPLATES.items():
+        for reverse_name, template in urls_templates.items():
             with self.subTest(reverse_name=reverse_name):
                 response = self.authorized_client.get(reverse_name)
                 self.assertTemplateUsed(response, template)
@@ -68,7 +81,7 @@ class PostPagesTests(TestCase):
     def test_group_list_page_show_correct_context(self):
         """Шаблон group_list сформирован с правильным контекстом."""
         response = self.authorized_client.get(
-            reverse('posts:group_list', kwargs={'slug': 'group_slug'})
+            reverse('posts:group_list', kwargs={'slug': self.group.slug})
         )
         first_post = response.context['page_obj'][0]
         group = response.context['group']
@@ -80,7 +93,7 @@ class PostPagesTests(TestCase):
     def test_profile_page_show_correct_context(self):
         """Шаблон profile сформирован с правильным контекстом."""
         response = self.authorized_client.get(
-            reverse('posts:profile', kwargs={'username': 'freemirror'})
+            reverse('posts:profile', kwargs={'username': self.user.username})
         )
         first_post = response.context['page_obj'][0]
         user = response.context['user']
@@ -92,7 +105,10 @@ class PostPagesTests(TestCase):
     def test_post_detail_show_correct_context(self):
         """Шаблон post_detail сформирован с правильным контекстом."""
         response = self.authorized_client.get(
-            reverse('posts:post_detail', kwargs={'post_id': '1'})
+            reverse(
+                'posts:post_detail',
+                kwargs={'post_id': str(self.post.pk)}
+            )
         )
         post = response.context['posts']
         self.assertEqual(post.text, 'Текстовый пост')
@@ -115,14 +131,17 @@ class PostPagesTests(TestCase):
     def test_post_not_included_into_anotger_group(self):
         """Пост с группой 'Погода' не попал в группу 'Ветра'"""
         response = self.authorized_client.get(
-            reverse('posts:group_list', kwargs={'slug': 'group2_slug'})
+            reverse(
+                'posts:group_list',
+                kwargs={'slug': self.group_without_posts.slug}
+            )
         )
         self.assertEqual(response.context.get('post'), None)
 
     def test_post_edit_page_show_correct_context(self):
         """Шаблон post_edit сформирован с правильным контекстом."""
         response = self.authorized_client.get(reverse(
-            'posts:post_edit', kwargs={'post_id': '1'}))
+            'posts:post_edit', kwargs={'post_id': str(self.post.pk)}))
         form_fields = {
             'text': forms.fields.CharField,
             'group': forms.fields.ChoiceField,
@@ -174,22 +193,22 @@ class PaginatorViewsTest(TestCase):
     def test_first_group_list_page_ten_posts(self):
         """На первой странице group_list должно быть 10 постов"""
         response = self.authorized_client.get(
-            reverse('posts:group_list', kwargs={'slug': 'test_slug'}))
+            reverse('posts:group_list', kwargs={'slug': self.group.slug}))
         self.assertEqual(response.context['page_obj'].end_index(),
                          self.first_page_posts)
 
-    def test_second_group_list_page_thre_posts(self):
+    def test_second_group_list_page_three_posts(self):
         """На второй странице group_list должно быть 3 поста"""
         response = self.authorized_client.get(
             reverse('posts:group_list',
-                    kwargs={'slug': 'test_slug'}) + '?page=2')
+                    kwargs={'slug': self.group.slug}) + '?page=2')
         self.assertEqual(response.context['page_obj'].end_index(),
                          self.second_page_posts)
 
     def test_first_profile_page_ten_posts(self):
         """На первой странице profile должно быть 10 постов"""
         response = self.authorized_client.get(
-            reverse('posts:profile', kwargs={'username': 'test_user'}))
+            reverse('posts:profile', kwargs={'username': self.user.username}))
         self.assertEqual(response.context['page_obj'].end_index(),
                          self.first_page_posts)
 
@@ -197,6 +216,6 @@ class PaginatorViewsTest(TestCase):
         """На второй странице profile должно быть 3 поста"""
         response = self.authorized_client.get(
             reverse('posts:profile',
-                    kwargs={'username': 'test_user'}) + '?page=2')
+                    kwargs={'username': self.user.username}) + '?page=2')
         self.assertEqual(response.context['page_obj'].end_index(),
                          self.second_page_posts)
