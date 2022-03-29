@@ -16,10 +16,6 @@ class PostCreateFormTests(TestCase):
         )
         cls.form = PostForm
 
-    @classmethod
-    def tearDownClass(cls) -> None:
-        super().tearDownClass()
-
     def setUp(self):
         self.guest_client = Client()
         self.authorized_client = Client()
@@ -49,7 +45,7 @@ class PostCreateFormTests(TestCase):
         posts_count = Post.objects.count()
         form_data = {'text': 'Текстовый пост 3'}
         self.authorized_client.post(
-            reverse('posts:post_edit', kwargs={'post_id': '1'}),
+            reverse('posts:post_edit', kwargs={'post_id': str(self.post.id)}),
             data=form_data,
             follow=True,
         )

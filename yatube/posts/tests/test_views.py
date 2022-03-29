@@ -5,24 +5,6 @@ from django.urls import reverse
 from ..models import Group, Post, User
 
 
-urls_templates = {
-    reverse('posts:index'): 'posts/index.html',
-    reverse(
-        'posts:group_list', kwargs={'slug': 'group_slug'}
-    ): 'posts/group_list.html',
-    reverse(
-        'posts:profile', kwargs={'username': 'freemirror'}
-    ): 'posts/profile.html',
-    reverse(
-        'posts:post_detail', kwargs={'post_id': '1'}
-    ): 'posts/post_detail.html',
-    reverse('posts:post_create'): 'posts/create_post.html',
-    reverse(
-        'posts:post_edit', kwargs={'post_id': '1'}
-    ): 'posts/create_post.html',
-}
-
-
 class PostPagesTests(TestCase):
     @classmethod
     def setUpClass(cls):
@@ -65,7 +47,8 @@ class PostPagesTests(TestCase):
         self.authorized_client.force_login(self.user)
 
     def test_pages_uses_correct_template(self):
-        for reverse_name, template in urls_templates.items():
+        """Страницы используют правильные шаблоны."""
+        for reverse_name, template in self.urls_templates.items():
             with self.subTest(reverse_name=reverse_name):
                 response = self.authorized_client.get(reverse_name)
                 self.assertTemplateUsed(response, template)
