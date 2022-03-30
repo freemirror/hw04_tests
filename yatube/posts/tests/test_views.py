@@ -34,11 +34,11 @@ class PostPagesTests(TestCase):
                 'posts:profile', kwargs={'username': cls.user.username}
             ): 'posts/profile.html',
             reverse(
-                'posts:post_detail', kwargs={'post_id': str(cls.post.pk)}
+                'posts:post_detail', kwargs={'post_id': cls.post.pk}
             ): 'posts/post_detail.html',
             reverse('posts:post_create'): 'posts/create_post.html',
             reverse(
-                'posts:post_edit', kwargs={'post_id': str(cls.post.pk)}
+                'posts:post_edit', kwargs={'post_id': cls.post.pk}
             ): 'posts/create_post.html',
         }
 
@@ -90,7 +90,7 @@ class PostPagesTests(TestCase):
         response = self.authorized_client.get(
             reverse(
                 'posts:post_detail',
-                kwargs={'post_id': str(self.post.pk)}
+                kwargs={'post_id': self.post.pk}
             )
         )
         post = response.context['posts']
@@ -124,7 +124,7 @@ class PostPagesTests(TestCase):
     def test_post_edit_page_show_correct_context(self):
         """Шаблон post_edit сформирован с правильным контекстом."""
         response = self.authorized_client.get(reverse(
-            'posts:post_edit', kwargs={'post_id': str(self.post.pk)}))
+            'posts:post_edit', kwargs={'post_id': self.post.pk}))
         form_fields = {
             'text': forms.fields.CharField,
             'group': forms.fields.ChoiceField,

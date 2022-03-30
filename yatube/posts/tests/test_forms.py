@@ -45,7 +45,7 @@ class PostCreateFormTests(TestCase):
         posts_count = Post.objects.count()
         form_data = {'text': 'Текстовый пост 3'}
         self.authorized_client.post(
-            reverse('posts:post_edit', kwargs={'post_id': str(self.post.id)}),
+            reverse('posts:post_edit', kwargs={'post_id': self.post.id}),
             data=form_data,
             follow=True,
         )

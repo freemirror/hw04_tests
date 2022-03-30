@@ -23,7 +23,7 @@ class PostURLTests(TestCase):
             'posts/index.html': '/',
             'posts/group_list.html': f'/group/{cls.group.slug}/',
             'posts/profile.html': f'/profile/{cls.user.username}/',
-            'posts/post_detail.html': f'/posts/{str(cls.post.pk)}/',
+            'posts/post_detail.html': f'/posts/{cls.post.pk}/',
         }
 
     def setUp(self):
@@ -53,7 +53,7 @@ class PostURLTests(TestCase):
     def test_posts_edit_url_exists_at_desired_location_for_author_only(self):
         """Страница 'posts/<int:post_id>/edit/ доступна
         автору поста."""
-        response = self.author_client.get(f'/posts/{str(self.post.pk)}/edit/')
+        response = self.author_client.get(f'/posts/{self.post.pk}/edit/')
         self.assertEqual(response.status_code, HTTPStatus.OK)
 
     def test_create_post_url_redirect_anonymous(self):
@@ -63,12 +63,12 @@ class PostURLTests(TestCase):
 
     def test_edit_post_url_redirect_anonymous(self):
         """Страница /posts/1/edit/ перенаправляет анонимного пользователя."""
-        response = self.guest_client.get(f'/posts/{str(self.post.pk)}/edit/')
+        response = self.guest_client.get(f'/posts/{self.post.pk}/edit/')
         self.assertEqual(response.status_code, HTTPStatus.FOUND)
 
     def test_edit_post_url_redirect_no_author_user(self):
         """Страница /posts/1/edit/ перенаправляет не автора поста."""
-        response = self.authorized_client.get(f'/posts/{str(self.post.pk)}'
+        response = self.authorized_client.get(f'/posts/{self.post.pk}'
                                               f'/edit/')
         self.assertEqual(response.status_code, HTTPStatus.FOUND)
 
@@ -89,6 +89,6 @@ class PostURLTests(TestCase):
     def test_urls_author_post_user_uses_correct_template(self):
         """URL-адрес использует соответствующий шаблон для автора
         поста пользователя."""
-        response = self.author_client.get(f'/posts/{str(self.post.pk)}'
+        response = self.author_client.get(f'/posts/{self.post.pk}'
                                           f'/edit/')
         self.assertTemplateUsed(response, 'posts/create_post.html')
